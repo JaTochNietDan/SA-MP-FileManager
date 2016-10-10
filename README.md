@@ -40,7 +40,7 @@ native dir_list(dir:handle, storage[], &type, length = sizeof(storage));
 
 **Listing a directory**
 
-```
+```pawn
 new dir:dHandle = dir_open("./");
 new item[40], type;
 	
