@@ -1,5 +1,5 @@
 {
-    "user": "JaTochNietDan",
+    "user": "ICJefferson",
     "repo": "SA-MP-FileManager",
     "resources": [
         {
@@ -18,6 +18,6 @@
         }
     ],
     "runtime": {
-        "plugins": ["JaTochNietDan/SA-MP-FileManager"]
+        "plugins": ["ICJefferson/SA-MP-FileManager"]
     }
 }
