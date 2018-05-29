@@ -3,18 +3,16 @@
     "repo": "SA-MP-FileManager",
     "resources": [
         {
-            "name": "^FileManager_1.5_Linux.zip$",
-            "platform": "linux",
-            "archive": true,
-            "includes": ["filemanager.inc"],
-            "plugins": ["FileManager.so"]
-        },
-        {
-            "name": "^FileManager_1.5_Windows.zip$",
+            "name": "^FileManager_(.*)_Windows.zip$",
             "platform": "windows",
             "archive": true,
-            "includes": ["filemanager.inc"],
-            "plugins": ["FileManager.dll"]
+            "plugins": ["^FileManager.dll$"]
+        },
+        {
+            "name": "^FileManager_(.*)_Linux.zip$",
+            "platform": "linux",
+            "archive": true,
+            "plugins": ["^filemanager.so$"]
         }
     ],
     "runtime": {
