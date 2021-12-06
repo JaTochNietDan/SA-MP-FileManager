@@ -1,3 +1,19 @@
+
+#if defined _INC_file_manager
+	#undef _INC_file_manager
+#endif
+
+#if defined _file_manager_included
+	#endinput
+#endif
+
+#define _file_manager_included
+
+// FM_DIR defines a directory and FM_FILE defines a file
+// when using dir_list, these will be the types returned.
+#define FM_DIR 1
+#define FM_FILE 2
+
 /*
 	Function: file_move(const file[], const destination[]);
 	Description: Moves a specified file to the specified destination.
@@ -185,8 +201,3 @@ native dir_close(dir:handle);
 	Returns: 1 if there a sub-directory/file was found, 0 if there wasn't.
 */
 native dir_list(dir:handle, storage[], &type, length = sizeof(storage));
-
-// FM_DIR defines a directory and FM_FILE defines a file
-// when using dir_list, these will be the types returned.
-#define FM_DIR 1
-#define FM_FILE 2
