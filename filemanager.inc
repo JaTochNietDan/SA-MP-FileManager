@@ -175,9 +175,18 @@ native dir_exists(const directory[]);
 	Params:
 			const directory[] - The path of the directory to be opened.
 			
-	Returns: 1 if it exists, and 0 if it does not exist.
+	Returns: A directory handle on success, or 0 on failure.
 */
 native dir:dir_open(const directory[]);
+
+/*
+    Opens a snapshot of a directory sorted by filename, using case-sensitive,
+    bytewise order (uppercase before lowercase), independent of OS and locale.
+    Includes . and .. when supplied by the filesystem, as dir_open does.
+    Read with dir_list and release with dir_close. Later filesystem changes
+    are not reflected. Returns a directory handle, or 0 on failure.
+*/
+native dir:dir_open_sorted(const directory[]);
 
 /*
 	Function: dir_close(dir:handle);

@@ -16,7 +16,10 @@
 #include <sys/stat.h>   // For stat().
 #include <stdio.h> // for the sprintf function
 #include "stdlib.h"
-#include "malloc.h"
+#include "directory.h"
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 #include <string>
 #include <fstream>
 #include <cstring>
@@ -25,11 +28,14 @@
 #include "SDK/amx/amx.h"
 #include "SDK/plugincommon.h"
 
-#define VERSION "Version 1.5"
+#ifndef FILEMANAGER_VERSION
+#define FILEMANAGER_VERSION "dev"
+#endif
+#define VERSION "Version " FILEMANAGER_VERSION
 
 using namespace std;
 //----------------------------------------------------------
-typedef void (*logprintf_t)(char* format, ...);
+typedef void (*logprintf_t)(const char* format, ...);
 
 logprintf_t logprintf;
 void **ppPluginData;
@@ -161,7 +167,7 @@ static cell AMX_NATIVE_CALL n_file_read( AMX* amx, cell* params )
 
 			amx_GetAddr(amx, params[2], &buf);
 
-			buffer[lSize + 1] = NULL;
+			buffer[lSize + 1] = '\0';
 
 			amx_SetString(buf, buffer, 0, 0, lSize + 1);
 
@@ -326,55 +332,51 @@ static cell AMX_NATIVE_CALL n_f_close( AMX* amx, cell* params)
 	return false;
 }
 
-static cell AMX_NATIVE_CALL n_dir_open( AMX* amx, cell* params)
+static cell open_directory(AMX* amx, cell* params, bool sorted)
 {
-	char* path;
-	DIR* dir;
-
-	amx_StrParam(amx, params[1], path);
-
-	dir = opendir (path);
-    if (dir != NULL) return (cell)dir;
-	return 0;
+    char* path;
+    amx_StrParam(amx, params[1], path);
+    try {
+        return (cell)DirectoryStream::open(path, sorted);
+    } catch (const std::exception&) {
+        return 0;
+    }
 }
 
-static cell AMX_NATIVE_CALL n_dir_list( AMX* amx, cell* params)
+static cell AMX_NATIVE_CALL n_dir_open(AMX* amx, cell* params)
 {
-	DIR *dir = (DIR*)params[1];
-	
-	struct dirent *ent;
-
-	if ((ent = readdir (dir)) != NULL) 
-	{
-		cell *buf, *addr;
-
-		amx_GetAddr(amx, params[3], &addr);
-
-		switch (ent->d_type) 
-		{
-			case DT_REG:
-				*addr = 2;
-				break;
-			case DT_DIR:
-				*addr = 1;
-				break;
-			default:
-				*addr = 0;
-        }
-		
-		amx_GetAddr(amx, params[2], &buf);
-
-		amx_SetString(buf, ent->d_name, 0, 0, params[4]);
-		return true;
-	}
-	return false;
+    return open_directory(amx, params, false);
 }
 
-static cell AMX_NATIVE_CALL n_dir_close( AMX* amx, cell* params)
+static cell AMX_NATIVE_CALL n_dir_open_sorted(AMX* amx, cell* params)
 {
-	DIR *dir = (DIR*)params[1];
-	closedir (dir);
-	return true;
+    return open_directory(amx, params, true);
+}
+
+static cell AMX_NATIVE_CALL n_dir_list(AMX* amx, cell* params)
+{
+    DirectoryStream* dir = (DirectoryStream*)params[1];
+    if (!dir || params[4] <= 0) return false;
+    DirectoryEntry entry;
+    try {
+        if (!dir->next(entry)) return false;
+    } catch (const std::exception&) {
+        return false;
+    }
+    cell *buf, *addr;
+    amx_GetAddr(amx, params[3], &addr);
+    *addr = entry.type == DT_REG ? 2 : entry.type == DT_DIR ? 1 : 0;
+    amx_GetAddr(amx, params[2], &buf);
+    amx_SetString(buf, entry.name.c_str(), 0, 0, params[4]);
+    return true;
+}
+
+static cell AMX_NATIVE_CALL n_dir_close(AMX* amx, cell* params)
+{
+    DirectoryStream* dir = (DirectoryStream*)params[1];
+    if (!dir) return false;
+    delete dir;
+    return true;
 }
 
 static cell AMX_NATIVE_CALL n_f_read( AMX* amx, cell* params)
@@ -447,6 +449,7 @@ AMX_NATIVE_INFO FileManagerNatives[ ] =
 	{ "dir_delete",		n_dir_delete	},
 	{ "dir_exists",		n_dir_exists	},
 
+	{ "dir_open_sorted", n_dir_open_sorted },
 	{ "dir_open",		n_dir_open		},
 	{ "dir_close",		n_dir_close		},
 	{ "dir_list",		n_dir_list		},

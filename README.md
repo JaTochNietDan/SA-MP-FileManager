@@ -28,6 +28,7 @@ native dir_delete(directory[]); // Deletes a directory (Directory MUST be empty!
 native dir_exists(directory[]); // Check if a directory exists
 
 native dir:dir_open(directory[]);
+native dir:dir_open_sorted(const directory[]);
 native dir_close(dir:handle);
 native dir_list(dir:handle, storage[], &type, length = sizeof(storage));
 ```
@@ -62,3 +63,39 @@ This will result in the contents of your SA-MP server directory being printed.
 #### Thanks to
 - G-sTyLeZzZ (Coding support)
 - Y_Less (Bug finding)
+
+#### Sorted directory listings
+
+For consistent alphabetical ordering on Windows and Linux, replace `dir_open`
+with `dir_open_sorted`. Continue using `dir_list` and `dir_close` as above.
+The new function takes a snapshot at open time and sorts names in case-sensitive
+byte order (uppercase before lowercase), independent of the system locale.
+Files and directories are sorted together; `.` and `..` are included when the
+filesystem supplies them. Changes made after opening are not reflected in the
+snapshot. It returns `0` if the directory cannot be opened or read.
+The existing `dir_open` continues to use filesystem order.
+
+#### Building and releases
+
+Install [mise](https://mise.jdx.dev/), then run from the repository root:
+
+```sh
+mise trust
+mise install
+mise run test
+mise run build
+```
+
+The pinned Zig toolchain cross-compiles both 32-bit SA-MP plugins without a
+separate compiler or multilib installation. Host tests on macOS use the existing
+Xcode Command Line Tools compiler. Python packages the binaries,
+include, example, README and license into `build/FileManager_dev_Linux.zip`
+and `build/FileManager_dev_Windows.zip`. Linux targets glibc 2.17 or newer.
+To build just one platform, use
+`mise exec -- python scripts/build.py --platform Linux` (or `Windows`).
+
+GitHub Actions tests on Linux and Windows and uploads both archives for pull
+requests and pushes to `master`. To publish a release, push a version tag such
+as `v1.6.0`. Once both builds pass, the workflow publishes a GitHub Release
+with `FileManager_v1.6.0_Linux.zip` and `FileManager_v1.6.0_Windows.zip`.
+Manual workflow runs build downloadable artifacts without publishing a release.
